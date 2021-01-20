@@ -1,11 +1,9 @@
 using Transducers
 
-function getfirst(proc::Transducers.Eduction)
-    y = iterate(proc)
-    y === nothing && return nothing
-    return first(y)
+function getfirst(x::Transducers.Eduction, init)
+    foldxl((a, b) -> b, x |> ReduceIf(y -> true), init=init)
 end
-getfirst(::Nothing) = nothing
+getfirst(init) = (e -> getfirst(e, init))
 
 function remaining(v::AbstractVector{<:Unsigned}, nums, target)
     # Exit conditions where no solutions are possible
@@ -19,8 +17,8 @@ function remaining(v::AbstractVector{<:Unsigned}, nums, target)
     firstindex(v):lastindex(v) - nums + 1 |>
         Map(i -> (v[i], remaining(view(v, i+1:lastindex(v)), nums - 1, target - v[i]))) |>
         NotA(Tuple{Any, Nothing}) |>
-        first |> 
-        x -> x === nothing ? nothing : prod(x))
+        getfirst |>
+        x -> x === nothing ? nothing : prod(x)
 end    
 
 function day1()
@@ -30,4 +28,14 @@ function day1()
     end
     println("Day 1 part 1: ", Int(remaining(numbers, 2, 2020)))
     println("Day 1 part 2: ", Int(remaining(numbers, 3, 2020)))
+end
+
+function fib(n)
+    n < 2 && return n
+    n |> Map(n -> (fib(n-1), fib(n-2))) |> getfirst(nothing) |> sum
+end
+
+function fib2(n)
+    n < 2 && return n
+    n |> Map(n -> fib(n-1) + fib(n-2)) |> first
 end
